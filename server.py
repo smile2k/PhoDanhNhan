@@ -14,7 +14,7 @@ import db
 VOICE = "vi-VN-HoaiMyNeural"
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "tts-cache")
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "danh-nhan.json")
-PORT = 8080
+PORT = int(os.environ.get("PORT", 8080))
 
 os.makedirs(CACHE_DIR, exist_ok=True)
 
@@ -413,7 +413,8 @@ def main() -> None:
     print(f"TTS voice: {VOICE}")
     print(f"Cache dir: {CACHE_DIR}")
     print()
-    server = HTTPServer(("127.0.0.1", PORT), AppHandler)
+    host = os.environ.get("RENDER", "") and "0.0.0.0" or "127.0.0.1"
+    server = HTTPServer((host, PORT), AppHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
