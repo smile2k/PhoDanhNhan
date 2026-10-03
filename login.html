@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập — Phố Danh Nhân Hà Nội</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red-deep: #8b1a1a;
+      --red-mid: #a52222;
+      --gold: #f0c850;
+      --gold-dark: #d4a840;
+      --cream: #f5efe6;
+      --text-dark: #3a1a0a;
+      --text-light: rgba(240, 200, 80, 0.85);
+      --font: 'Be Vietnam Pro', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #6b1515 0%, #8b1a1a 30%, #a52222 60%, #8b1a1a 100%);
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+    }
+
+    .login-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gold);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .login-subtitle {
+      font-size: 12px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 4px;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(240, 200, 80, 0.15);
+      border-radius: 16px;
+      padding: 32px 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(240, 200, 80, 0.2);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-light);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: var(--red-deep);
+    }
+
+    .tab-btn:not(.active):hover {
+      background: rgba(240, 200, 80, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid rgba(240, 200, 80, 0.25);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--cream);
+      font-family: var(--font);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input::placeholder {
+      color: rgba(240, 200, 80, 0.35);
+    }
+
+    .form-group input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(240, 200, 80, 0.15);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: var(--red-deep);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(240, 200, 80, 0.3);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-msg {
+      background: rgba(220, 50, 50, 0.2);
+      border: 1px solid rgba(220, 50, 50, 0.4);
+      color: #ffaaaa;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    .success-msg {
+      background: rgba(50, 180, 50, 0.2);
+      border: 1px solid rgba(50, 180, 50, 0.4);
+      color: #aaffaa;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .success-msg.show {
+      display: block;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .back-link a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+
+    .back-link a:hover {
+      color: var(--gold);
+    }
+
+    .border-decor {
+      height: 3px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--gold) 0px, var(--gold) 8px,
+        transparent 8px, transparent 12px,
+        var(--gold-dark) 12px, var(--gold-dark) 14px,
+        transparent 14px, transparent 18px
+      );
+      opacity: 0.5;
+      border-radius: 2px;
+      margin-bottom: 28px;
+    }
+
+    #register-form { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-header">
+      <svg class="login-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Mặt trống đồng Đông Sơn -->
+        <circle cx="32" cy="32" r="30" stroke="#f0c850" stroke-width="1.8" fill="#8b1a1a"/>
+        <circle cx="32" cy="32" r="27.5" stroke="#f0c850" stroke-width="0.6" fill="none"/>
+        <!-- Hoa văn tam giác vành ngoài -->
+        <polygon points="32,4 34.2,9 29.8,9" fill="#f0c850" opacity="0.7"/>
+        <polygon points="32,60 34.2,55 29.8,55" fill="#f0c850" opacity="0.7"/>
+        <polygon points="4,32 9,29.8 9,34.2" fill="#f0c850" opacity="0.7"/>
+        <polygon points="60,32 55,29.8 55,34.2" fill="#f0c850" opacity="0.7"/>
+        <polygon points="12,12 16,13.2 13.2,16" fill="#f0c850" opacity="0.55"/>
+        <polygon points="52,12 48,13.2 50.8,16" fill="#f0c850" opacity="0.55"/>
+        <polygon points="12,52 16,50.8 13.2,48" fill="#f0c850" opacity="0.55"/>
+        <polygon points="52,52 48,50.8 50.8,48" fill="#f0c850" opacity="0.55"/>
+        <!-- Vành giữa -->
+        <circle cx="32" cy="32" r="21" stroke="#f0c850" stroke-width="0.8" fill="none"/>
+        <circle cx="32" cy="32" r="18.5" stroke="#f0c850" stroke-width="0.5" fill="none" stroke-dasharray="3 2"/>
+        <!-- Vành trong -->
+        <circle cx="32" cy="32" r="13" stroke="#f0c850" stroke-width="0.7" fill="none"/>
+        <!-- Ngôi sao 14 cánh - mặt trời trống đồng -->
+        <path d="M32,19 L33.6,27 L39.5,21 L35.8,28 L44.5,26 L37,30 L44.5,32 L37,34 L44.5,38 L35.8,36 L39.5,43 L33.6,37 L32,45 L30.4,37 L24.5,43 L28.2,36 L19.5,38 L27,34 L19.5,32 L27,30 L19.5,26 L28.2,28 L24.5,21 L30.4,27 Z" fill="#f0c850" opacity="0.85"/>
+        <!-- Tâm trống -->
+        <circle cx="32" cy="32" r="5.5" fill="#f0c850" opacity="0.95"/>
+        <circle cx="32" cy="32" r="2.8" fill="#8b1a1a"/>
+      </svg>
+      <div class="login-title">Phố Danh Nhân</div>
+      <div class="login-subtitle">Hà Nội</div>
+    </div>
+
+    <div class="border-decor"></div>
+
+    <div class="login-card">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="login">Đăng nhập</button>
+        <button class="tab-btn" data-tab="register">Đăng ký</button>
+      </div>
+
+      <div id="error-msg" class="error-msg"></div>
+      <div id="success-msg" class="success-msg"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username">Tên đăng nhập</label>
+          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập..." autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Mật khẩu</label>
+          <input type="password" id="login-password" placeholder="Nhập mật khẩu..." autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="submit-btn">Đăng nhập</button>
+      </form>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label for="reg-username">Tên đăng nhập</label>
+          <input type="text" id="reg-username" placeholder="Ít nhất 3 ký tự..." autocomplete="username" required minlength="3" />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Mật khẩu</label>
+          <input type="password" id="reg-password" placeholder="Ít nhất 6 ký tự..." autocomplete="new-password" required minlength="6" />
+        </div>
+        <div class="form-group">
+          <label for="reg-password2">Nhập lại mật khẩu</label>
+          <input type="password" id="reg-password2" placeholder="Xác nhận mật khẩu..." autocomplete="new-password" required minlength="6" />
+        </div>
+        <button type="submit" class="submit-btn">Đăng ký</button>
+      </form>
+    </div>
+
+    <div class="back-link">
+      <a href="/">← Quay lại bản đồ</a>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    (() => {
+      const loginForm = document.getElementById('login-form');
+      const registerForm = document.getElementById('register-form');
+      const errorMsg = document.getElementById('error-msg');
+      const successMsg = document.getElementById('success-msg');
+      const tabs = document.querySelectorAll('.tab-btn');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          errorMsg.classList.remove('show');
+          successMsg.classList.remove('show');
+          if (tab.dataset.tab === 'login') {
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+          } else {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+          }
+        });
+      });
+
+      function showError(msg) {
+        errorMsg.textContent = msg;
+        errorMsg.classList.add('show');
+        successMsg.classList.remove('show');
+      }
+
+      function showSuccess(msg) {
+        successMsg.textContent = msg;
+        successMsg.classList.add('show');
+        errorMsg.classList.remove('show');
+      }
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = loginForm.querySelector('.submit-btn');
+        btn.disabled = true;
+        errorMsg.classList.remove('show');
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        try {
+          const result = await Auth.login(username, password);
+          if (result.success) {
+            window.location.href = '/';
+          } else {
+            showError(result.error || 'Đăng nhập thất bại');
+          }
+        } catch {
+          showError('Lỗi kết nối server');
+        }
+        btn.disabled = false;
+      });
+
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = registerForm.querySelector('.submit-btn');
+        btn.disabled = true;
+        errorMsg.classList.remove('show');
+        const username = document.getElementById('reg-username').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const password2 = document.getElementById('reg-password2').value;
+        if (password !== password2) {
+          showError('Mật khẩu nhập lại không khớp');
+          btn.disabled = false;
+          return;
+        }
+        try {
+          const result = await Auth.register(username, password);
+          if (result.success) {
+            showSuccess('Đăng ký thành công! Đang đăng nhập...');
+            const loginResult = await Auth.login(username, password);
+            if (loginResult.success) {
+              setTimeout(() => { window.location.href = '/'; }, 800);
+            }
+          } else {
+            showError(result.error || 'Đăng ký thất bại');
+          }
+        } catch {
+          showError('Lỗi kết nối server');
+        }
+        btn.disabled = false;
+      });
+
+      Auth.checkSession().then(user => {
+        if (user) {
+          document.querySelector('.login-card').innerHTML =
+            '<div style="text-align:center;padding:32px">'
+            + '<p style="color:var(--gold);font-size:16px;margin-bottom:16px">Bạn đã đăng nhập với tài khoản <strong>' + user.username + '</strong></p>'
+            + '<a href="/" class="submit-btn" style="display:inline-block;text-decoration:none;text-align:center">← Quay lại bản đồ</a>'
+            + '</div>';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

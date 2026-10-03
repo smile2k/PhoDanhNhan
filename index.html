@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phố Danh Nhân Hà Nội</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div class="app-logo">
+        <div class="app-logo-icon">
+          <svg viewBox="0 0 36 36" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Mặt trống đồng Đông Sơn -->
+            <circle cx="18" cy="18" r="17" stroke="#f0c850" stroke-width="1.2" fill="#8b1a1a"/>
+            <!-- Vành ngoài -->
+            <circle cx="18" cy="18" r="15.5" stroke="#f0c850" stroke-width="0.4" fill="none"/>
+            <!-- Hoa văn tam giác vành ngoài -->
+            <polygon points="18,3 19.2,5.5 16.8,5.5" fill="#f0c850" opacity="0.7"/>
+            <polygon points="18,33 19.2,30.5 16.8,30.5" fill="#f0c850" opacity="0.7"/>
+            <polygon points="3,18 5.5,16.8 5.5,19.2" fill="#f0c850" opacity="0.7"/>
+            <polygon points="33,18 30.5,16.8 30.5,19.2" fill="#f0c850" opacity="0.7"/>
+            <polygon points="7.2,7.2 9.5,7.8 7.8,9.5" fill="#f0c850" opacity="0.55"/>
+            <polygon points="28.8,7.2 26.5,7.8 28.2,9.5" fill="#f0c850" opacity="0.55"/>
+            <polygon points="7.2,28.8 9.5,28.2 7.8,26.5" fill="#f0c850" opacity="0.55"/>
+            <polygon points="28.8,28.8 26.5,28.2 28.2,26.5" fill="#f0c850" opacity="0.55"/>
+            <!-- Vành giữa -->
+            <circle cx="18" cy="18" r="12" stroke="#f0c850" stroke-width="0.6" fill="none"/>
+            <circle cx="18" cy="18" r="10.5" stroke="#f0c850" stroke-width="0.3" fill="none" stroke-dasharray="1.8 1.2"/>
+            <!-- Vành trong -->
+            <circle cx="18" cy="18" r="7.5" stroke="#f0c850" stroke-width="0.5" fill="none"/>
+            <!-- Ngôi sao 14 cánh - mặt trời trống đồng -->
+            <path d="M18,10.5 L18.9,15 L22.5,11.5 L20,15.5 L25.5,14.5 L20.8,16.8 L25.5,18 L20.8,19.2 L25.5,21.5 L20,20.5 L22.5,24.5 L18.9,21 L18,25.5 L17.1,21 L13.5,24.5 L16,20.5 L10.5,21.5 L15.2,19.2 L10.5,18 L15.2,16.8 L10.5,14.5 L16,15.5 L13.5,11.5 L17.1,15 Z" fill="#f0c850" opacity="0.85"/>
+            <!-- Tâm trống -->
+            <circle cx="18" cy="18" r="3" fill="#f0c850" opacity="0.95"/>
+            <circle cx="18" cy="18" r="1.5" fill="#8b1a1a"/>
+          </svg>
+        </div>
+        <div class="app-logo-title">
+          <span class="app-logo-text">Phố Danh Nhân</span>
+          <span class="app-logo-sub">Hà Nội</span>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Tìm danh nhân hoặc tên phố..."
+          autocomplete="off"
+        />
+        <div id="search-suggestions" class="search-suggestions"></div>
+      </div>
+
+      <div id="danh-nhan-count" class="danh-nhan-count"></div>
+      <div class="user-menu" id="user-menu">
+        <a href="/login.html" class="user-menu-btn" id="btn-login" title="Đăng nhập">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="rgba(240,200,80,0.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </a>
+        <button class="user-menu-btn user-menu-logged" id="btn-user" style="display:none" title="Tài khoản">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="rgba(240,200,80,0.85)" stroke="none">
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          </svg>
+        </button>
+        <div class="user-dropdown" id="user-dropdown">
+          <div class="user-dropdown-header">
+            <div class="user-dropdown-name" id="dropdown-name"></div>
+            <div class="user-dropdown-role" id="dropdown-role"></div>
+          </div>
+          <div class="user-dropdown-divider"></div>
+          <a href="/admin.html" class="user-dropdown-item" id="dropdown-admin" style="display:none">
+            <span>&#9881;</span> Quản lý danh nhân
+          </a>
+          <a href="/admin.html?tab=users" class="user-dropdown-item" id="dropdown-users" style="display:none">
+            <span>&#128101;</span> Quản lý tài khoản
+          </a>
+          <button class="user-dropdown-item" id="dropdown-password">
+            <span>&#128274;</span> Đổi mật khẩu
+          </button>
+          <div class="user-dropdown-divider"></div>
+          <button class="user-dropdown-item user-dropdown-logout" id="dropdown-logout">
+            <span>&#10140;</span> Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="top-bar-border"></div>
+  </div>
+
+  <!-- GPS BUTTON -->
+  <button id="gps-btn" class="gps-btn" title="Bật/tắt GPS theo dõi">
+    📍
+  </button>
+
+  <!-- INFO PANEL -->
+  <div id="info-panel" class="info-panel">
+    <div class="panel-drag-handle"></div>
+
+    <div class="panel-header">
+      <div class="panel-header-info">
+        <div class="panel-name"></div>
+        <div class="panel-meta"></div>
+      </div>
+      <button class="panel-close" title="Đóng">✕</button>
+    </div>
+
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="bio">Tiểu sử</button>
+      <button class="panel-tab" data-tab="stories">Câu chuyện</button>
+      <button class="panel-tab" data-tab="street">Tên phố</button>
+    </div>
+
+    <div class="panel-body"></div>
+
+    <div class="tts-bar">
+      <button class="tts-btn tts-play" title="Phát/Tạm dừng">▶</button>
+      <button class="tts-btn tts-stop" title="Dừng">⏹</button>
+      <button class="tts-speed" title="Tốc độ đọc">1x</button>
+      <span class="tts-label">Nhấn ▶ để nghe</span>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/tts-engine.js"></script>
+  <script src="js/data-manager.js"></script>
+  <script src="js/street-highlight.js"></script>
+  <script src="js/street-detector.js"></script>
+  <script src="js/ui-panel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Danh Nhân — Phố Danh Nhân Hà Nội</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <div class="admin-topbar">
+    <a href="/" class="logo">Phố Danh Nhân</a>
+    <span class="page-title">/ Quản lý</span>
+    <div class="spacer"></div>
+    <span class="user-info" id="user-info"></span>
+    <a href="/" class="btn-back">← Bản đồ</a>
+  </div>
+  <div class="admin-border"></div>
+
+  <div class="admin-tabs" id="admin-tabs">
+    <button class="admin-tab active" data-tab="danh-nhan">Danh nhân</button>
+    <button class="admin-tab" data-tab="users" id="tab-users" style="display:none">Tài khoản</button>
+  </div>
+
+  <div class="admin-content" id="panel-danh-nhan">
+    <div class="admin-toolbar">
+      <input type="text" class="search-input" id="admin-search" placeholder="Tìm kiếm danh nhân..." />
+      <span class="count-badge" id="count-badge"></span>
+      <button class="btn-primary" id="btn-add">+ Thêm danh nhân</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Tên</th>
+            <th>Tên thật</th>
+            <th>Thời kỳ</th>
+            <th>Chức danh</th>
+            <th>Sinh — Mất</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="admin-content" id="panel-users" style="display:none">
+    <div class="admin-toolbar">
+      <span class="count-badge" id="users-count-badge"></span>
+      <button class="btn-primary" id="btn-add-user">+ Thêm tài khoản</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tên đăng nhập</th>
+            <th>Vai trò</th>
+            <th>Ngày tạo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT MODAL -->
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Thêm danh nhân</h2>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-error" id="modal-error" hidden></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-id">ID (slug)</label>
+            <input type="text" id="f-id" placeholder="vd: tran-hung-dao" required />
+          </div>
+          <div class="form-group">
+            <label for="f-name">Tên danh nhân *</label>
+            <input type="text" id="f-name" placeholder="Trần Hưng Đạo" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-realName">Tên thật</label>
+            <input type="text" id="f-realName" placeholder="Trần Quốc Tuấn" />
+          </div>
+          <div class="form-group">
+            <label for="f-era">Thời kỳ</label>
+            <input type="text" id="f-era" placeholder="Nhà Trần" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-born">Năm sinh</label>
+            <input type="text" id="f-born" placeholder="1228" />
+          </div>
+          <div class="form-group">
+            <label for="f-died">Năm mất</label>
+            <input type="text" id="f-died" placeholder="1300" />
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label for="f-title">Chức danh</label>
+          <input type="text" id="f-title" placeholder="Quốc công Tiết chế" />
+        </div>
+        <div class="form-group full-width">
+          <label for="f-summary">Tóm tắt</label>
+          <textarea id="f-summary" rows="2" placeholder="Mô tả ngắn..."></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label for="f-bio">Tiểu sử</label>
+          <textarea id="f-bio" rows="4" placeholder="Tiểu sử chi tiết..."></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label for="f-streetNote">Ghi chú về tên phố</label>
+          <textarea id="f-streetNote" rows="2" placeholder="Phố này nằm ở..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-wikiSlug">Wiki slug</label>
+            <input type="text" id="f-wikiSlug" placeholder="Trần_Hưng_Đạo" />
+          </div>
+          <div class="form-group">
+            <label for="f-aliases">Tên khác (phân cách bằng dấu phẩy)</label>
+            <input type="text" id="f-aliases" placeholder="Trần Quốc Tuấn, Hưng Đạo Vương" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="modal-cancel">Hủy</button>
+        <button class="btn-primary" id="modal-save">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM -->
+  <div class="confirm-overlay" id="confirm-overlay" hidden>
+    <div class="confirm-box">
+      <p>Bạn có chắc muốn xóa<br><span class="confirm-name" id="confirm-name"></span>?</p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" id="confirm-cancel">Hủy</button>
+        <button class="btn-danger" id="confirm-delete" style="padding: 10px 20px; font-size: 14px;">Xóa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD USER MODAL -->
+  <div class="modal-overlay" id="user-modal-overlay" hidden>
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <h2>Thêm tài khoản</h2>
+        <button class="modal-close" id="user-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-error" id="user-modal-error" hidden></div>
+        <div class="modal-success" id="user-modal-success" hidden></div>
+        <div class="form-group full-width">
+          <label for="fu-username">Tên đăng nhập</label>
+          <input type="text" id="fu-username" placeholder="Ít nhất 3 ký tự" required />
+        </div>
+        <div class="form-group full-width">
+          <label for="fu-password">Mật khẩu</label>
+          <input type="password" id="fu-password" placeholder="Ít nhất 6 ký tự" required />
+        </div>
+        <div class="form-group full-width">
+          <label for="fu-role">Vai trò</label>
+          <select id="fu-role" class="role-select" style="width:100%;padding:10px 12px;border-radius:8px;font-size:14px">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="user-modal-cancel">Hủy</button>
+        <button class="btn-primary" id="user-modal-save">Tạo tài khoản</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
