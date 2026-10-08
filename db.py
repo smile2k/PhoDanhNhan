@@ -35,6 +35,34 @@ def init_db() -> None:
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS spots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            street_name TEXT NOT NULL,
+            person_id TEXT,
+            lat REAL NOT NULL,
+            lng REAL NOT NULL,
+            category TEXT NOT NULL DEFAULT 'tip',
+            title TEXT NOT NULL,
+            content TEXT,
+            image_url TEXT,
+            thumb_url TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS spot_likes (
+            spot_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (spot_id, user_id),
+            FOREIGN KEY (spot_id) REFERENCES spots(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
     conn.commit()
 
     row = conn.execute("SELECT id FROM users WHERE role = 'superadmin'").fetchone()
@@ -182,3 +210,74 @@ def delete_user(user_id: int) -> bool:
     conn.commit()
     conn.close()
     return True
+
+
+def create_spot(user_id: int, username: str, street_name: str, person_id: str | None,
+                lat: float, lng: float, category: str, title: str,
+                content: str | None, image_url: str | None, thumb_url: str | None) -> dict:
+    conn = get_connection()
+    cur = conn.execute(
+        """INSERT INTO spots (user_id, username, street_name, person_id, lat, lng, category, title, content, image_url, thumb_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, username, street_name, person_id, lat, lng, category, title, content, image_url, thumb_url),
+    )
+    conn.commit()
+    spot = conn.execute("SELECT * FROM spots WHERE id = ?", (cur.lastrowid,)).fetchone()
+    conn.close()
+    return dict(spot)
+
+
+def list_spots(street_name: str | None = None, person_id: str | None = None,
+               lat: float | None = None, lng: float | None = None, radius_m: float = 500) -> list[dict]:
+    conn = get_connection()
+    if street_name:
+        rows = conn.execute(
+            "SELECT * FROM spots WHERE street_name = ? ORDER BY created_at DESC",
+            (street_name,),
+        ).fetchall()
+    elif person_id:
+        rows = conn.execute(
+            "SELECT * FROM spots WHERE person_id = ? ORDER BY created_at DESC",
+            (person_id,),
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM spots ORDER BY created_at DESC LIMIT 100").fetchall()
+    result = [dict(r) for r in rows]
+    for s in result:
+        like_count = conn.execute("SELECT COUNT(*) FROM spot_likes WHERE spot_id = ?", (s["id"],)).fetchone()[0]
+        s["likes"] = like_count
+    conn.close()
+    return result
+
+
+def delete_spot(spot_id: int, user_id: int, role: str) -> bool:
+    conn = get_connection()
+    row = conn.execute("SELECT user_id FROM spots WHERE id = ?", (spot_id,)).fetchone()
+    if not row:
+        conn.close()
+        return False
+    if row["user_id"] != user_id and role not in ("admin", "superadmin"):
+        conn.close()
+        return False
+    conn.execute("DELETE FROM spots WHERE id = ?", (spot_id,))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def toggle_like(spot_id: int, user_id: int) -> dict:
+    conn = get_connection()
+    existing = conn.execute(
+        "SELECT 1 FROM spot_likes WHERE spot_id = ? AND user_id = ?",
+        (spot_id, user_id),
+    ).fetchone()
+    if existing:
+        conn.execute("DELETE FROM spot_likes WHERE spot_id = ? AND user_id = ?", (spot_id, user_id))
+        liked = False
+    else:
+        conn.execute("INSERT INTO spot_likes (spot_id, user_id) VALUES (?, ?)", (spot_id, user_id))
+        liked = True
+    conn.commit()
+    count = conn.execute("SELECT COUNT(*) FROM spot_likes WHERE spot_id = ?", (spot_id,)).fetchone()[0]
+    conn.close()
+    return {"liked": liked, "likes": count}

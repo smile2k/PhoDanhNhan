@@ -1,10 +1,13 @@
 const UIPanel = (() => {
   let panelEl, nameEl, metaEl, bodyEl, tabsEl, ttsBar;
-  let closeBtn;
+  let closeBtn, thumbEl;
   let currentPerson = null;
   let currentTab = 'bio';
+  let thumbRequestId = 0;
+  let map_ref = null;
 
-  function init() {
+  function init(leafletMap) {
+    map_ref = leafletMap || null;
     panelEl = document.getElementById('info-panel');
     nameEl = panelEl.querySelector('.panel-name');
     metaEl = panelEl.querySelector('.panel-meta');
@@ -12,6 +15,7 @@ const UIPanel = (() => {
     tabsEl = panelEl.querySelector('.panel-tabs');
     ttsBar = panelEl.querySelector('.tts-bar');
     closeBtn = panelEl.querySelector('.panel-close');
+    thumbEl = document.getElementById('panel-thumb');
 
     closeBtn.addEventListener('click', close);
 
@@ -89,10 +93,44 @@ const UIPanel = (() => {
   function show(person) {
     currentPerson = person;
     renderHeader(person);
+    loadThumbnail(person);
     renderBody(person);
     switchTab('bio');
     panelEl.classList.remove('minimized');
     panelEl.classList.add('open');
+  }
+
+  async function loadThumbnail(person) {
+    const reqId = ++thumbRequestId;
+    thumbEl.classList.remove('visible');
+    thumbEl.innerHTML = '';
+
+    if (!person.wikiSlug) return;
+
+    if (person._wiki) {
+      if (person._wiki.thumbnail) showThumb(person._wiki.thumbnail, reqId);
+      return;
+    }
+
+    const wiki = await DataManager.fetchWikiSummary(person.wikiSlug);
+    if (!wiki) return;
+    person._wiki = wiki;
+    if (wiki.thumbnail && reqId === thumbRequestId) {
+      showThumb(wiki.thumbnail, reqId);
+    }
+  }
+
+  function showThumb(url, reqId) {
+    if (reqId !== thumbRequestId) return;
+    const img = new Image();
+    img.alt = currentPerson?.name || '';
+    img.onload = () => {
+      if (reqId !== thumbRequestId) return;
+      thumbEl.innerHTML = '';
+      thumbEl.appendChild(img);
+      thumbEl.classList.add('visible');
+    };
+    img.src = url;
   }
 
   function close() {
@@ -133,7 +171,103 @@ const UIPanel = (() => {
       <div class="tab-content" data-tab="street">
         <div class="street-note">${escHtml(person.streetNote || 'Chưa có thông tin về con phố.').replace(/\n/g, '<br>')}</div>
       </div>
+      <div class="tab-content" data-tab="explore">
+        <button class="spot-add-btn" id="spot-add-btn">+ Thêm địa điểm</button>
+        <div id="spot-form-container"></div>
+        <div id="spot-feed" class="spot-feed"><div class="loading-spinner" style="margin:20px auto"></div></div>
+      </div>
     `;
+    loadSpotFeed(person);
+  }
+
+  async function loadSpotFeed(person) {
+    const feedEl = bodyEl.querySelector('#spot-feed');
+    if (!feedEl) return;
+    const spots = await Spots.loadForPerson(person.id);
+    const user = await getLoggedInUser();
+    Spots.renderFeed(spots, feedEl, user);
+    setupSpotActions(feedEl, person);
+    setupSpotAddButton(person);
+  }
+
+  function setupSpotActions(feedEl, person) {
+    feedEl.addEventListener('click', async (e) => {
+      const likeBtn = e.target.closest('.spot-like-btn');
+      if (likeBtn) {
+        const spotId = likeBtn.dataset.spotId;
+        try {
+          const result = await Spots.toggleLike(spotId);
+          likeBtn.querySelector('span').textContent = result.likes;
+        } catch { /* ignore */ }
+        return;
+      }
+      const delBtn = e.target.closest('.spot-delete-btn');
+      if (delBtn) {
+        const spotId = delBtn.dataset.spotId;
+        try {
+          await Spots.deleteSpot(spotId);
+          delBtn.closest('.spot-card').remove();
+        } catch { /* ignore */ }
+      }
+    });
+  }
+
+  function setupSpotAddButton(person) {
+    const addBtn = bodyEl.querySelector('#spot-add-btn');
+    const formContainer = bodyEl.querySelector('#spot-form-container');
+    if (!addBtn || !formContainer) return;
+
+    addBtn.addEventListener('click', async () => {
+      const user = await getLoggedInUser();
+      if (!user) {
+        window.location.href = '/login.html';
+        return;
+      }
+      if (formContainer.innerHTML) {
+        formContainer.innerHTML = '';
+        return;
+      }
+      const cats = Spots.getCategoryIcons();
+      formContainer.innerHTML = `
+        <div class="spot-form">
+          <select id="spot-category" class="spot-form-select">
+            ${Object.entries(cats).map(([k, v]) => `<option value="${k}">${v.emoji} ${escHtml(v.label)}</option>`).join('')}
+          </select>
+          <input type="text" id="spot-title" class="spot-form-input" placeholder="Tiêu đề (vd: Phở Thìn)" maxlength="100" />
+          <textarea id="spot-content" class="spot-form-textarea" placeholder="Mô tả ngắn..." rows="2" maxlength="500"></textarea>
+          <input type="url" id="spot-image" class="spot-form-input" placeholder="Link ảnh (tùy chọn)" />
+          <button id="spot-submit" class="spot-form-submit">Đăng</button>
+        </div>
+      `;
+      formContainer.querySelector('#spot-submit').addEventListener('click', async () => {
+        const title = formContainer.querySelector('#spot-title').value.trim();
+        if (!title) return;
+        const center = map_ref ? map_ref.getCenter() : { lat: 0, lng: 0 };
+        try {
+          await Spots.createSpot({
+            street_name: person.name,
+            person_id: person.id,
+            lat: center.lat,
+            lng: center.lng,
+            category: formContainer.querySelector('#spot-category').value,
+            title,
+            content: formContainer.querySelector('#spot-content').value.trim() || null,
+            image_url: formContainer.querySelector('#spot-image').value.trim() || null,
+          });
+          formContainer.innerHTML = '';
+          loadSpotFeed(person);
+        } catch { /* ignore */ }
+      });
+    });
+  }
+
+  async function getLoggedInUser() {
+    try {
+      const resp = await fetch('/api/auth/me');
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      return data.success ? data.user : null;
+    } catch { return null; }
   }
 
   function renderStories(stories) {

@@ -155,6 +155,14 @@ class AppHandler(SimpleHTTPRequestHandler):
                 self.send_error(500, str(e))
             return
 
+        if parsed.path == "/api/spots":
+            params = parse_qs(parsed.query)
+            street = params.get("street", [None])[0]
+            person = params.get("person", [None])[0]
+            spots = db.list_spots(street_name=street, person_id=person)
+            self._send_json({"success": True, "spots": spots}, no_cache=True)
+            return
+
         if parsed.path == "/api/tts/voices":
             voices = [
                 {"id": "vi-VN-HoaiMyNeural", "name": "HoaiMy (Nữ, Bắc)", "gender": "Female"},
@@ -304,6 +312,49 @@ class AppHandler(SimpleHTTPRequestHandler):
             self._send_json({"success": True})
             return
 
+        if parsed.path == "/api/spots":
+            user = self._get_current_user()
+            if not user:
+                self._send_json({"success": False, "error": "Chưa đăng nhập"}, 401)
+                return
+            body = self._read_json_body()
+            if not body or not body.get("title") or not body.get("street_name"):
+                self._send_json({"success": False, "error": "Thiếu tiêu đề hoặc tên đường"}, 400)
+                return
+            category = body.get("category", "tip")
+            if category not in ("food", "cafe", "checkin", "tip"):
+                category = "tip"
+            spot = db.create_spot(
+                user_id=user["id"],
+                username=user["username"],
+                street_name=body["street_name"],
+                person_id=body.get("person_id"),
+                lat=float(body.get("lat", 0)),
+                lng=float(body.get("lng", 0)),
+                category=category,
+                title=body["title"],
+                content=body.get("content"),
+                image_url=body.get("image_url"),
+                thumb_url=body.get("thumb_url"),
+            )
+            self._send_json({"success": True, "spot": spot})
+            return
+
+        if parsed.path.startswith("/api/spots/") and parsed.path.endswith("/like"):
+            user = self._get_current_user()
+            if not user:
+                self._send_json({"success": False, "error": "Chưa đăng nhập"}, 401)
+                return
+            spot_id_str = parsed.path.replace("/api/spots/", "").replace("/like", "")
+            try:
+                spot_id = int(spot_id_str)
+            except ValueError:
+                self._send_json({"success": False, "error": "ID không hợp lệ"}, 400)
+                return
+            result = db.toggle_like(spot_id, user["id"])
+            self._send_json({"success": True, **result})
+            return
+
         if parsed.path == "/api/danh-nhan":
             user = self._get_current_user()
             if not user or user.get("role") not in ("admin", "superadmin"):
@@ -370,6 +421,24 @@ class AppHandler(SimpleHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
+
+        if parsed.path.startswith("/api/spots/"):
+            user = self._get_current_user()
+            if not user:
+                self._send_json({"success": False, "error": "Chưa đăng nhập"}, 401)
+                return
+            spot_id_str = parsed.path[len("/api/spots/"):]
+            try:
+                spot_id = int(spot_id_str)
+            except ValueError:
+                self._send_json({"success": False, "error": "ID không hợp lệ"}, 400)
+                return
+            ok = db.delete_spot(spot_id, user["id"], user.get("role", "user"))
+            if not ok:
+                self._send_json({"success": False, "error": "Không thể xóa"}, 403)
+                return
+            self._send_json({"success": True})
+            return
 
         if parsed.path.startswith("/api/danh-nhan/"):
             user = self._get_current_user()

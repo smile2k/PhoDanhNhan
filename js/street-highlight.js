@@ -256,5 +256,5 @@ const StreetHighlight = (() => {
     return hasResult;
   }
 
-  return { init, highlight, clear, hasHighlight };
+  return { init, highlight, clear, hasHighlight, haversine };
 })();

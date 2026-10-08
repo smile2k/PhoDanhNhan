@@ -6,11 +6,12 @@
   let userMarker = null;
   let accuracyCircle = null;
   let gpsMode = false;
+  let ttsMode = 'summary';
 
   async function initApp() {
     initMap();
     await DataManager.init();
-    UIPanel.init();
+    UIPanel.init(map);
     TTSEngine.init(handleTTSState);
     StreetHighlight.init(map);
     StreetDetector.init({
@@ -24,7 +25,15 @@
     setupStoryTTS();
     const count = DataManager.getAll().length;
     document.getElementById('danh-nhan-count').textContent = `${count} danh nhân`;
+    setupShareButton();
+    await TourGuide.init(map, {
+      onStopChange: handleTourStopChange,
+      onTourEnd: handleTourEnd
+    });
+    setupTourButton();
     await setupAuth();
+    Spots.init(map, { onSpotClick: (spot) => showToast(spot.title) });
+    handleDeepLink();
     showToast('Chạm vào bản đồ hoặc tìm tên phố để khám phá');
   }
 
@@ -36,7 +45,7 @@
       attributionControl: false
     });
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
@@ -250,16 +259,27 @@
     }
   }
 
+  function buildTTSText(person) {
+    if (ttsMode === 'full') {
+      let text = person.name + '. ' + person.summary;
+      if (person.bio) text += '. ' + person.bio;
+      if (person.stories && person.stories.length > 0) {
+        for (const story of person.stories) {
+          text += '. ' + story.title + '. ' + story.content;
+        }
+      }
+      return text;
+    }
+    return person.name + '. ' + person.summary;
+  }
+
   function handleStreetChange(streetName, lat, lng) {
     const person = DataManager.matchStreetName(streetName);
     if (person) {
       UIPanel.show(person);
       StreetHighlight.highlight(person.name);
       if (gpsMode) {
-        TTSEngine.speak(
-          person.name + '. ' + person.summary,
-          person.name
-        );
+        TTSEngine.speak(buildTTSText(person), person.name);
       }
       showToast('📍 ' + streetName);
     }
@@ -285,6 +305,9 @@
 
     if (gpsMode) {
       map.panTo([lat, lng], { animate: true });
+      if (TourGuide.isActive()) {
+        TourGuide.checkProximity(lat, lng);
+      }
     }
   }
 
@@ -294,12 +317,15 @@
       gpsMode = !gpsMode;
       btn.classList.toggle('active', gpsMode);
 
+      const modeBtn = document.getElementById('tts-mode-btn');
       if (gpsMode) {
         StreetDetector.startTracking();
+        modeBtn.style.display = 'flex';
         showToast('GPS đang bật — di chuyển để khám phá');
       } else {
         StreetDetector.stopTracking();
         TTSEngine.stop();
+        modeBtn.style.display = 'none';
         if (userMarker) {
           map.removeLayer(userMarker);
           map.removeLayer(accuracyCircle);
@@ -308,6 +334,16 @@
         }
         showToast('GPS đã tắt');
       }
+    });
+
+    const modeBtn = document.getElementById('tts-mode-btn');
+    modeBtn.addEventListener('click', () => {
+      ttsMode = ttsMode === 'summary' ? 'full' : 'summary';
+      modeBtn.classList.toggle('full', ttsMode === 'full');
+      const label = ttsMode === 'full' ? 'Đọc đầy đủ' : 'Đọc tóm tắt';
+      modeBtn.title = label;
+      modeBtn.textContent = ttsMode === 'full' ? '📖' : '📋';
+      showToast(label);
     });
   }
 
@@ -457,6 +493,109 @@
     });
 
     document.getElementById('pw-old').focus();
+  }
+
+  function setupTourButton() {
+    const tourBtn = document.getElementById('tour-btn');
+    const selector = document.getElementById('tour-selector');
+    const selectorClose = document.getElementById('tour-selector-close');
+    const tourList = document.getElementById('tour-list');
+    const progressEl = document.getElementById('tour-progress');
+
+    tourBtn.addEventListener('click', () => {
+      if (TourGuide.isActive()) {
+        TourGuide.stop();
+        return;
+      }
+      renderTourList();
+      selector.classList.add('open');
+    });
+
+    selectorClose.addEventListener('click', () => {
+      selector.classList.remove('open');
+    });
+
+    function renderTourList() {
+      const tours = TourGuide.getTours();
+      tourList.innerHTML = tours.map(t => `
+        <div class="tour-card" data-tour-id="${t.id}">
+          <div class="tour-card-name">${escHtml(t.name)}</div>
+          <div class="tour-card-desc">${escHtml(t.description)}</div>
+          <div class="tour-card-meta">
+            <span>🕐 ${t.estimatedMinutes} phút</span>
+            <span>📏 ${t.distanceKm} km</span>
+            <span>📍 ${t.stops.length} điểm</span>
+          </div>
+        </div>
+      `).join('');
+
+      tourList.querySelectorAll('.tour-card').forEach(card => {
+        card.addEventListener('click', () => {
+          selector.classList.remove('open');
+          TourGuide.start(card.dataset.tourId);
+          tourBtn.classList.add('active');
+        });
+      });
+    }
+
+    document.getElementById('tour-prev').addEventListener('click', () => TourGuide.prevStop());
+    document.getElementById('tour-next').addEventListener('click', () => TourGuide.nextStop());
+    document.getElementById('tour-end').addEventListener('click', () => TourGuide.stop());
+  }
+
+  function handleTourStopChange(personId, index, total) {
+    const person = DataManager.getById(personId);
+    if (!person) return;
+
+    UIPanel.show(person);
+    StreetHighlight.highlight(person.name);
+
+    if (gpsMode) {
+      TTSEngine.speak(buildTTSText(person), person.name);
+    }
+
+    const progressEl = document.getElementById('tour-progress');
+    progressEl.style.display = '';
+    document.getElementById('tour-progress-fill').style.width = ((index + 1) / total * 100) + '%';
+    document.getElementById('tour-progress-label').textContent = (index + 1) + '/' + total;
+    document.getElementById('tour-progress-name').textContent = person.name;
+  }
+
+  function handleTourEnd() {
+    document.getElementById('tour-progress').style.display = 'none';
+    document.getElementById('tour-btn').classList.remove('active');
+    showToast('Tour kết thúc!');
+  }
+
+  function handleDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    const personId = params.get('person');
+    if (!personId) return;
+    const person = DataManager.getById(personId);
+    if (person) {
+      selectPerson(person);
+    }
+  }
+
+  function setupShareButton() {
+    const btn = document.getElementById('panel-share-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const person = UIPanel.getCurrent();
+      if (!person) return;
+      const url = window.location.origin + window.location.pathname + '?person=' + encodeURIComponent(person.id);
+      const title = person.name + ' — Phố Danh Nhân Hà Nội';
+
+      if (navigator.share) {
+        navigator.share({ title, url }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('Đã copy link!');
+        }).catch(() => {
+          showToast(url);
+        });
+      }
+    });
   }
 
   let toastTimer;

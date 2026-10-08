@@ -1,0 +1,49 @@
+[
+  {
+    "id": "quanh-ho-guom",
+    "name": "Quanh Hồ Gươm",
+    "description": "Khám phá các con phố mang tên danh nhân xung quanh Hồ Hoàn Kiếm — trái tim Hà Nội.",
+    "estimatedMinutes": 60,
+    "distanceKm": 3.2,
+    "stops": [
+      { "personId": "ly-thai-to", "lat": 21.0288, "lng": 105.8525 },
+      { "personId": "le-thanh-tong", "lat": 21.0256, "lng": 105.8530 },
+      { "personId": "tran-hung-dao", "lat": 21.0240, "lng": 105.8510 },
+      { "personId": "ly-thuong-kiet", "lat": 21.0268, "lng": 105.8490 },
+      { "personId": "tran-nhan-tong", "lat": 21.0300, "lng": 105.8480 },
+      { "personId": "hai-ba-trung", "lat": 21.0210, "lng": 105.8520 }
+    ]
+  },
+  {
+    "id": "dau-an-nha-tran",
+    "name": "Dấu ấn nhà Trần",
+    "description": "Hành trình theo dấu chân các anh hùng, danh tướng thời nhà Trần tại Hà Nội.",
+    "estimatedMinutes": 75,
+    "distanceKm": 4.0,
+    "stops": [
+      { "personId": "tran-hung-dao", "lat": 21.0240, "lng": 105.8510 },
+      { "personId": "tran-quang-khai", "lat": 21.0200, "lng": 105.8490 },
+      { "personId": "tran-nhan-tong", "lat": 21.0300, "lng": 105.8480 },
+      { "personId": "tran-binh-trong", "lat": 21.0260, "lng": 105.8450 },
+      { "personId": "tran-quoc-toan", "lat": 21.0230, "lng": 105.8460 },
+      { "personId": "pham-ngu-lao", "lat": 21.0255, "lng": 105.8430 }
+    ]
+  },
+  {
+    "id": "anh-hung-chong-ngoai-xam",
+    "name": "Anh hùng chống ngoại xâm",
+    "description": "Tuyến đường đi qua các phố mang tên những vị anh hùng đã bảo vệ đất nước qua hàng nghìn năm.",
+    "estimatedMinutes": 90,
+    "distanceKm": 5.5,
+    "stops": [
+      { "personId": "hai-ba-trung", "lat": 21.0210, "lng": 105.8520 },
+      { "personId": "ba-trieu", "lat": 21.0195, "lng": 105.8505 },
+      { "personId": "ngo-quyen", "lat": 21.0270, "lng": 105.8460 },
+      { "personId": "ly-thuong-kiet", "lat": 21.0268, "lng": 105.8490 },
+      { "personId": "tran-hung-dao", "lat": 21.0240, "lng": 105.8510 },
+      { "personId": "le-loi", "lat": 21.0225, "lng": 105.8540 },
+      { "personId": "nguyen-hue", "lat": 21.0215, "lng": 105.8500 },
+      { "personId": "phan-dinh-phung", "lat": 21.0310, "lng": 105.8420 }
+    ]
+  }
+]
